@@ -1,0 +1,56 @@
+CREATE TABLE step_entry_exit
+(Session_ID INT, 
+ step INT,
+ time DATETIME,
+ entry BOOLEAN);
+
+INSERT into step_entry_exit values
+    (10, 1, datetime('2011-07-01 08:00:00.000'), True),
+    (12, 1, datetime('2011-07-01 08:05:00.000'), True),
+    (10, 1, datetime('2011-07-01 08:05:00.000'), False),
+    (13, 1, datetime('2011-07-01 08:05:00.000'), True),
+    (14, 1, datetime('2011-07-01 08:10:00.000'), True),
+    (10, 2, datetime('2011-07-01 08:10:00.000'), True),
+    (13, 1, datetime('2011-07-01 08:11:00.000'), False),
+    (12, 1, datetime('2011-07-01 08:12:00.000'), False),
+    (15, 1, datetime('2011-07-01 08:12:00.000'), True),
+    (13, 2, datetime('2011-07-01 08:15:00.000'), True),
+    (15, 1, datetime('2011-07-01 08:20:00.000'), False),
+    (10, 2, datetime('2011-07-01 08:30:00.000'), False),
+    (15, 2, datetime('2011-07-01 08:30:00.000'), True),
+    (12, 2, datetime('2011-07-01 08:32:00.000'), True),
+    (12, 2, datetime('2011-07-01 08:32:00.000'), False),
+    (13, 2, datetime('2011-07-01 08:40:00.000'), False),
+    (15, 2, datetime('2011-07-01 08:45:00.000'), False);
+
+-- gets average time spent in steps
+-- and number of completed sessions
+-- should be better to use pivoting
+SELECT X.step, avg(strftime('%s', y.time) - strftime('%s', x.time)) AS avg_time, count(X.Session_ID) AS count
+  FROM
+       (SELECT session_id, step, time
+          FROM step_entry_exit
+         WHERE entry = True)
+       X
+       JOIN -- to avoid NULL in end time
+       (SELECT session_id, step, time
+          FROM step_entry_exit
+         WHERE entry = False)
+       Y ON X.session_id = Y.session_id AND 
+            X.step = Y.step
+ GROUP BY X.step;
+
+-- get current unclosed sessions
+SELECT x.session_id, x.step, x.time AS [start], y.time AS [end]
+  FROM
+       (SELECT session_id, step, time
+          FROM step_entry_exit
+         WHERE entry = True)
+       X
+       LEFT OUTER JOIN-- to avoid NULL in end time
+       (SELECT session_id, step, time
+          FROM step_entry_exit
+         WHERE entry = False)
+       Y ON X.session_id = Y.session_id AND 
+            X.step = Y.step
+ WHERE [end] IS NULL;
