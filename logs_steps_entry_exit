@@ -1,3 +1,5 @@
+DROP TABLE step_entry_exit;
+
 CREATE TABLE step_entry_exit
 (Session_ID INT, 
  step INT,
@@ -30,27 +32,65 @@ SELECT X.step, avg(strftime('%s', y.time) - strftime('%s', x.time)) AS avg_time,
   FROM
        (SELECT session_id, step, time
           FROM step_entry_exit
-         WHERE entry = True)
+         WHERE entry = True) -- column for entry
        X
        JOIN -- to avoid NULL in end time
        (SELECT session_id, step, time
           FROM step_entry_exit
-         WHERE entry = False)
-       Y ON X.session_id = Y.session_id AND 
+         WHERE entry = False) -- column for exit
+       Y
+       ON X.session_id = Y.session_id AND 
             X.step = Y.step
  GROUP BY X.step;
 
 -- get current unclosed sessions
-SELECT x.session_id, x.step, x.time AS [start], y.time AS [end]
+SELECT x.session_id, x.step, x.time AS entry, y.time AS exit
   FROM
        (SELECT session_id, step, time
           FROM step_entry_exit
          WHERE entry = True)
        X
-       LEFT OUTER JOIN-- to avoid NULL in end time
+       LEFT OUTER JOIN -- to keep NULL in end time
        (SELECT session_id, step, time
           FROM step_entry_exit
          WHERE entry = False)
-       Y ON X.session_id = Y.session_id AND 
+       Y 
+       ON X.session_id = Y.session_id AND 
             X.step = Y.step
- WHERE [end] IS NULL;
+ WHERE exit IS NULL;
+
+-- get table that gives start and end times
+DROP table entry_and_exit;
+Create table entry_and_exit AS
+    SELECT X.session_id, X.step, X.time AS entry, Y.time AS exit
+      FROM
+           (SELECT session_id, step, time
+              FROM step_entry_exit
+             WHERE entry = True)
+           X
+           LEFT OUTER JOIN
+           (SELECT session_id, step, time
+              FROM step_entry_exit
+             WHERE entry = False)
+           Y
+           ON X.session_id = Y.session_id AND 
+                x.step = y.step;
+
+-- queries on ETLed table
+select * from entry_and_exit;
+
+-- total time in each step for each user
+SELECT session_id, step, strftime('%s', exit) - strftime('%s', entry) as time
+  FROM entry_and_exit;
+
+-- total login time of user
+SELECT session_id, sum(strftime('%s', exit) - strftime('%s', entry) ) AS total_time
+  FROM entry_and_exit
+ GROUP BY session_id;
+
+-- give users in step at time t
+SELECT step, count( * ) AS users
+  FROM entry_and_exit
+ WHERE entry <= datetime('2011-07-01 08:09:00.000') AND 
+       exit >= datetime('2011-07-01 08:09:00.000') 
+ GROUP BY step;
