@@ -91,6 +91,6 @@ SELECT session_id, sum(strftime('%s', exit) - strftime('%s', entry) ) AS total_t
 -- give users in step at time t
 SELECT step, count( * ) AS users
   FROM entry_and_exit
- WHERE entry <= datetime('2011-07-01 08:09:00.000') AND 
-       exit >= datetime('2011-07-01 08:09:00.000') 
+ WHERE entry <= datetime('2011-07-01 08:12:00.000') AND 
+       exit >= datetime('2011-07-01 08:12:00.000') 
  GROUP BY step;
