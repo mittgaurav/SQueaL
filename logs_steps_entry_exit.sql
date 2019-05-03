@@ -1,5 +1,4 @@
 DROP TABLE step_entry_exit;
-
 CREATE TABLE step_entry_exit
 (Session_ID INT, 
  step INT,
@@ -28,19 +27,12 @@ INSERT into step_entry_exit values
 -- gets average time spent in steps
 -- and number of completed sessions
 -- should be better to use pivoting
-SELECT X.step, avg(strftime('%s', y.time) - strftime('%s', x.time)) AS avg_time, count(X.Session_ID) AS count
-  FROM
-       (SELECT session_id, step, time
-          FROM step_entry_exit
-         WHERE entry = True) -- column for entry
-       X
-       JOIN -- to avoid NULL in end time
-       (SELECT session_id, step, time
-          FROM step_entry_exit
-         WHERE entry = False) -- column for exit
-       Y
-       ON X.session_id = Y.session_id AND 
-            X.step = Y.step
+SELECT X.step, avg(strftime('%s', y.time) - strftime('%s', x.time)) AS avg_time, count(X.session_id) AS count
+  FROM step_entry_exit X
+       INNER JOIN step_entry_exit y ON X.session_id = Y.session_id AND 
+                                       X.step = Y.step AND 
+                                       X.entry = True AND 
+                                       Y.entry = False
  GROUP BY X.step;
 
 -- get current unclosed sessions
@@ -48,12 +40,12 @@ SELECT x.session_id, x.step, x.time AS entry, y.time AS exit
   FROM
        (SELECT session_id, step, time
           FROM step_entry_exit
-         WHERE entry = True)
+         WHERE entry = True)  -- entry points
        X
-       LEFT OUTER JOIN -- to keep NULL in end time
+       LEFT OUTER JOIN -- to get NULL in exit
        (SELECT session_id, step, time
           FROM step_entry_exit
-         WHERE entry = False)
+         WHERE entry = False)  -- exit points
        Y 
        ON X.session_id = Y.session_id AND 
             X.step = Y.step
@@ -84,7 +76,7 @@ SELECT session_id, step, strftime('%s', exit) - strftime('%s', entry) as time
   FROM entry_and_exit;
 
 -- total login time of user
-SELECT session_id, sum(strftime('%s', exit) - strftime('%s', entry) ) AS total_time
+SELECT session_id, sum(strftime('%s', exit) - strftime('%s', entry) ) AS total_time, count( * ) as steps
   FROM entry_and_exit
  GROUP BY session_id;
 
