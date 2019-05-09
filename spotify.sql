@@ -1,4 +1,5 @@
 -- user details
+DROP TABLE logins;
 DROP TABLE user_details;
 CREATE TABLE user_details(
 id          INT, 
@@ -18,7 +19,6 @@ INSERT INTO user_details VALUES
 
 -- login times and other values
 -- transactional facts
-DROP TABLE logins;
 CREATE TABLE logins(
 session_id  INT      PRIMARY KEY, 
 user_id     INT, 
@@ -29,8 +29,19 @@ FOREIGN KEY (user_id) REFERENCES user_details (id)
 );
 
 INSERT INTO logins VALUES
+                   (100114, 18, 123, datetime('2016-04-01 08:00:00.000'), NULL), 
+                   (100061, 11, 123, datetime('2017-04-01 08:00:00.000'), NULL),
+                   (100008, 1, 23,   datetime('2018-02-22 08:00:00.000'), NULL), 
+                   (100015, 18, 123, datetime('2018-03-01 08:00:00.000'), NULL), 
+                   (100031, 11, 123, datetime('2018-04-01 03:00:00.000'), NULL), 
+                   (100112, 18, 123, datetime('2018-04-01 08:00:00.000'), NULL), 
+                   (100103, 18, 123, datetime('2018-04-01 08:00:00.000'), NULL), 
+                   (100011, 11, 123, datetime('2018-04-11 18:00:00.000'), NULL), 
+                   (100111, 1, 23,   datetime('2018-12-22 02:00:00.000'), NULL), 
+                   (100102, 11, 123, datetime('2018-11-01 18:00:00.000'), NULL), 
                    (100001, 1, 234,  datetime('2019-01-21 08:00:00.000'), NULL), 
                    (130001, 11, 234, datetime('2019-01-21 08:00:00.000'), NULL), 
+                   (135001, 11, 234, datetime('2019-01-21 04:00:00.000'), NULL), 
                    (103001, 11, 23,  datetime('2019-01-21 18:00:00.000'), NULL), 
                    (100401, 18, 23,  datetime('2019-01-21 08:00:00.000'), NULL), 
                    (110001, 1, 234,  datetime('2019-01-21 08:00:00.000'), NULL), 
@@ -40,20 +51,13 @@ INSERT INTO logins VALUES
                    (100005, 1, 23,   datetime('2019-04-21 18:00:00.000'), NULL), 
                    (100006, 1, 23,   datetime('2019-04-29 18:00:00.000'), NULL), 
                    (100007, 1, 23,   datetime('2019-05-02 18:00:00.000'), NULL), 
-                   (100008, 1, 23,   datetime('2018-02-22 08:00:00.000'), NULL), 
                    (100009, 2, 234,  datetime('2019-02-11 18:00:00.000'), NULL), 
-                   (100011, 11, 123, datetime('2018-04-11 18:00:00.000'), NULL), 
-                   (100111, 1, 23,   datetime('2018-12-22 02:00:00.000'), NULL), 
                    (101111, 1, 23,   datetime('2019-02-02 08:00:00.000'), NULL), 
-                   (100031, 11, 123, datetime('2018-04-01 03:00:00.000'), NULL), 
-                   (100102, 11, 123, datetime('2018-11-01 18:00:00.000'), NULL), 
-                   (100103, 18, 123, datetime('2018-04-01 08:00:00.000'), NULL), 
-                   (100114, 18, 123, datetime('2016-04-01 08:00:00.000'), NULL), 
-                   (100015, 18, 123, datetime('2018-03-01 08:00:00.000'), NULL), 
-                   (100112, 18, 123, datetime('2018-04-01 08:00:00.000'), NULL), 
-                   (111111, 1, 23,   datetime('2019-05-01 08:00:00.000'), NULL), 
-                   (100061, 11, 123, datetime('2017-04-01 08:00:00.000'), NULL);
+                   (111111, 1, 23,   datetime('2019-05-01 08:00:00.000'), NULL);
 
+-- this will require a python 
+-- layer to track live conns
+-- and update these values.
 UPDATE logins
    SET logout = datetime(login, '+10 minutes')
  WHERE location_id = 23;
@@ -86,3 +90,8 @@ SELECT date, count(DISTINCT user_id) AS DAU
 select strftime('%Y-%m', date) as month, count(DISTINCT user_id) AS MAU
   FROM login_fact
  GROUP BY strftime('%Y-%m', date);
+ 
+-- average time per day per user (Engagement)
+SELECT date, sum(duration) time, count(user_id) users, sum(duration) / count(user_id) average
+  FROM login_fact
+ GROUP BY date;
