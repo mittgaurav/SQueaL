@@ -73,18 +73,22 @@ INSERT INTO platform_dim VALUES
 -- locations, and platforms. We
 -- will run queries on top of it
 DROP TABLE IF EXISTS play_fact;
-CREATE TABLE play_fact as
-SELECT date(play_level_1.start_time) date, user_id, level, platformid, location_id, age_group, 
-       count(session_id) sessions, sum(end_time - start_time) duration
-  FROM play_level_1
-       INNER JOIN location_dim 
-         ON x = location_x AND y = location_y
-       INNER JOIN platform_dim 
-         ON platform_name = platform_dim.name
-       INNER JOIN
-       (SELECT id, age_group
-          FROM user_details
-               INNER JOIN age_group_dim 
-                 ON age >= start_age AND age < end_age) ages
-         ON user_id = ages.id
- GROUP BY date, user_id, level, platformid, location_id, age_group;
+CREATE TABLE play_fact AS
+SELECT calendar.date, user_id, level, platformid, location_id, age_group, sessions, duration
+  FROM calendar
+       LEFT JOIN 
+       (SELECT date(start_time) date, user_id, level, platformid, location_id, age_group, 
+            count(session_id) sessions, sum(strftime('%s', end_time) - strftime('%s', start_time) ) duration
+          FROM play_level_1 
+               INNER JOIN location_dim 
+                 ON x = location_x AND y = location_y
+               INNER JOIN platform_dim 
+                 ON platform_name = platform_dim.name
+               INNER JOIN
+               (SELECT id, age_group
+                  FROM user_details
+                       INNER JOIN age_group_dim
+                         ON age >= start_age AND age < end_age) ages
+                 ON user_id = ages.id
+         GROUP BY date, user_id, level, platformid, location_id, age_group) staging_table
+         ON calendar.date = staging_table.date;
