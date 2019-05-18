@@ -1,28 +1,36 @@
-DROP TABLE step_entry_exit;
+DROP TABLE IF EXISTS step_entry_exit;
 CREATE TABLE step_entry_exit
 (Session_ID INT, 
  step INT,
  time DATETIME,
  entry BOOLEAN);
 
-INSERT into step_entry_exit values
-    (10, 1, datetime('2011-07-01 08:00:00.000'), True),
-    (12, 1, datetime('2011-07-01 08:05:00.000'), True),
-    (10, 1, datetime('2011-07-01 08:05:00.000'), False),
-    (13, 1, datetime('2011-07-01 08:05:00.000'), True),
-    (14, 1, datetime('2011-07-01 08:10:00.000'), True),
-    (10, 2, datetime('2011-07-01 08:10:00.000'), True),
-    (13, 1, datetime('2011-07-01 08:11:00.000'), False),
-    (12, 1, datetime('2011-07-01 08:12:00.000'), False),
-    (15, 1, datetime('2011-07-01 08:12:00.000'), True),
-    (13, 2, datetime('2011-07-01 08:15:00.000'), True),
-    (15, 1, datetime('2011-07-01 08:20:00.000'), False),
-    (10, 2, datetime('2011-07-01 08:30:00.000'), False),
-    (15, 2, datetime('2011-07-01 08:30:00.000'), True),
-    (12, 2, datetime('2011-07-01 08:32:00.000'), True),
-    (12, 2, datetime('2011-07-01 08:32:00.000'), False),
-    (13, 2, datetime('2011-07-01 08:40:00.000'), False),
-    (15, 2, datetime('2011-07-01 08:45:00.000'), False);
+INSERT INTO step_entry_exit VALUES
+                            (10, 1, datetime('2011-07-01 08:00:00.000'), True), 
+                            (12, 1, datetime('2011-07-01 08:05:00.000'), True), 
+                            (10, 1, datetime('2011-07-01 08:05:00.000'), False), 
+                            (13, 1, datetime('2011-07-01 08:05:00.000'), True), 
+                            (14, 1, datetime('2011-07-01 08:10:00.000'), True), 
+                            (10, 2, datetime('2011-07-01 08:10:00.000'), True), 
+                            (13, 1, datetime('2011-07-01 08:11:00.000'), False), 
+                            (12, 1, datetime('2011-07-01 08:12:00.000'), False), 
+                            (15, 1, datetime('2011-07-01 08:12:00.000'), True), 
+                            (13, 2, datetime('2011-07-01 08:15:00.000'), True), 
+                            (15, 1, datetime('2011-07-01 08:20:00.000'), False), 
+                            (10, 2, datetime('2011-07-01 08:30:00.000'), False), 
+                            (15, 2, datetime('2011-07-01 08:30:00.000'), True), 
+                            (12, 2, datetime('2011-07-01 08:32:00.000'), True), 
+                            (12, 2, datetime('2011-07-01 08:32:00.000'), False), 
+                            (13, 2, datetime('2011-07-01 08:40:00.000'), False), 
+                            (10, 3, datetime('2011-07-01 08:32:00.000'), True), 
+                            (10, 3, datetime('2011-07-01 08:33:00.000'), False), 
+                            (12, 3, datetime('2011-07-01 08:33:00.000'), True), 
+                            (12, 3, datetime('2011-07-01 08:34:00.000'), False), 
+                            (13, 3, datetime('2011-07-01 08:34:00.000'), True), 
+                            (13, 3, datetime('2011-07-01 08:38:00.000'), False), 
+                            (10, 4, datetime('2011-07-01 08:39:00.000'), True), 
+                            (15, 2, datetime('2011-07-01 08:45:00.000'), False);
+
 
 -- gets average time spent in steps
 -- and number of completed sessions
@@ -52,7 +60,7 @@ SELECT x.session_id, x.step, x.time AS entry, y.time AS exit
  WHERE exit IS NULL;
 
 -- get table that gives start and end times
-DROP table entry_and_exit;
+DROP table IF EXISTS entry_and_exit;
 Create table entry_and_exit AS
     SELECT X.session_id, X.step, X.time AS entry, Y.time AS exit
       FROM
@@ -86,3 +94,13 @@ SELECT step, count( * ) AS users
  WHERE entry <= datetime('2011-07-01 08:12:00.000') AND 
        exit >= datetime('2011-07-01 08:12:00.000') 
  GROUP BY step;
+
+-- Now, let's look at some activation rate
+-- basically, how many steps were completed
+/*
+SELECT step, sessions, (2*sessions) - sum(sessions) over (ORDER BY step ASC rows 2 PRECEDING) attrition
+  FROM
+       (SELECT step, count(session_id) sessions
+          FROM entry_and_exit
+         GROUP BY step);
+*/
