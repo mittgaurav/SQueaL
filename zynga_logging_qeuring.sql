@@ -1,43 +1,23 @@
 /*
 get daily, weekly, and monthly 
-active users using self joins.
-*/
--- EXPLAIN QUERY PLAN
--- EXPLAIN
-WITH dau_table AS
-(SELECT date, count(DISTINCT user_id) dau
-  FROM play_fact
- GROUP BY date)
-SELECT dau_table.date date, 
-       dau_table.dau dau,
-      (SELECT count(DISTINCT user_id)
-         FROM play_fact
-       WHERE play_fact.date BETWEEN date(dau_table.date, '-6 days') AND dau_table.date) wau,
-      (SELECT count(DISTINCT user_id)
-         FROM play_fact
-       WHERE play_fact.date BETWEEN date(dau_table.date, '-27 days') AND dau_table.date) mau
-from dau_table
-group by dau_table.date;
-
-/*
-get daily, weekly, and monthly 
-active users using subqueries
-along with calendar table.
+active users using join with calendar.
+Avoid using correlated subqueries
+and temporary tables.
 */
 -- EXPLAIN QUERY PLAN
 -- EXPLAIN
 SELECT calendar.date date, 
-      (SELECT count(DISTINCT user_id)
-         FROM play_fact
-       WHERE play_fact.date = calendar.date) dau,
-      (SELECT count(DISTINCT user_id)
-         FROM play_fact
-       WHERE play_fact.date BETWEEN date(calendar.date, '-6 days') AND calendar.date) wau,
-      (SELECT count(DISTINCT user_id)
-         FROM play_fact
-       WHERE play_fact.date BETWEEN date(calendar.date, '-27 days') AND calendar.date) mau
-from calendar
-group by calendar.date;
+       count(DISTINCT dau_.user_id) dau, 
+       count(DISTINCT wau_.user_id) wau,
+       count(DISTINCT mau_.user_id) mau
+  FROM calendar
+       INNER JOIN play_fact dau_ 
+         ON calendar.date = dau_.date
+       INNER JOIN play_fact wau_ 
+         ON wau_.date BETWEEN date(calendar.date, '-6 days') AND calendar.date
+       INNER JOIN play_fact mau_ 
+         ON mau_.date BETWEEN date(calendar.date, '-27 days') AND calendar.date
+ GROUP BY calendar.date;
 
 /*get dau, wau, and mau
 along with retention over
