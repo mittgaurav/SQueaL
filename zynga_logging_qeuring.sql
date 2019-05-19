@@ -25,7 +25,7 @@ week/month.
 */ 
 -- EXPLAIN QUERY PLAN
 WITH dau_table AS
-(SELECT date, count(DISTINCT user_id) dau, sum(sessions)*1.0 sessions, sum(duration)*1.0 duration
+(SELECT date, count(DISTINCT user_id)*1.0 dau, sum(sessions)*1.0 sessions, sum(duration)*1.0 duration
   FROM play_fact
  GROUP BY 1),
 wau_table as 
@@ -43,13 +43,13 @@ mau_table as
          AND play_fact.user_id IS NOT NULL
  GROUP BY 1)
 SELECT dau_table.date date, dau, wau, mau, 
-      (dau * 1.0/wau) weekly_retention, (dau * 1.0/mau) monthly_retention,
+      (dau/wau) weekly_engmt, (dau/mau) monthly_engmt,
       dau_table.sessions/wau_table.sessions weekly_sess, dau_table.duration/wau_table.duration weekly_dur,
       dau_table.sessions/mau_table.sessions monthly_sess, dau_table.duration/mau_table.duration monthly_dur
   FROM dau_table
-      LEFT JOIN wau_table
+      INNER JOIN wau_table
         ON dau_table.date = wau_table.date
-      LEFT JOIN mau_table
+      INNER JOIN mau_table
         on dau_table.date = mau_table.date;
 
 /* use wau to get weekly retention,
