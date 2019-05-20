@@ -14,7 +14,7 @@ SELECT sessions.session_id, user_id, start_time, end_time, level, platform_name,
 -- age group dimension
 DROP TABLE IF EXISTS age_group_dim;
 CREATE TABLE age_group_dim(
-age_group VARCHAR(20),
+age_group VARCHAR(20) PRIMARY KEY,
 start_age INT,
 end_age   INT
 );
