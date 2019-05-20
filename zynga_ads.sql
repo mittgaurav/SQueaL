@@ -43,6 +43,8 @@ INSERT INTO ads VALUES
                 (6, 10010, DATETIME('2019-02-24 18:00:00'), 'clicked'), 
                 (7, 10014, DATETIME('2019-02-25 18:00:00'), 'ignored'), 
                 (7, 10015, DATETIME('2019-02-26 18:00:00'), 'ignored'), 
+                (7, 10015, DATETIME('2019-02-26 18:01:00'), 'clicked'), 
+                (7, 10015, DATETIME('2019-02-26 18:01:00'), 'ignored'), 
                 (6, 10016, DATETIME('2019-02-28 18:00:00'), 'ignored');
 
 DROP TABLE IF EXISTS ads_fact;
@@ -59,3 +61,27 @@ SELECT calendar.date, ads.id, user_id, platform_name, age_group, user_action
          ON user_id = user_details.id
        LEFT JOIN age_group_dim
          ON age >= start_age AND age < end_age;
+
+/*
+find how much money we made in a week
+along with click rate (clicked v rest).
+*/
+-- EXPLAIN QUERY PLAN
+-- EXPLAIN
+SELECT date, earning as daily_earning, /*sum(earning) OVER (rows 6 preceding) week_earning,*/
+    clicks, ads_shown, clicks*1.0/ads_shown click_rate
+  FROM
+(SELECT date, 
+    sum(CASE 
+            WHEN user_action = 'clicked' THEN cost 
+            ELSE NULL 
+        END) earning,
+    count(CASE 
+            WHEN user_action = 'clicked' THEN 1 
+            ELSE NULL 
+        END) clicks,
+    count(ads_fact.id) ads_shown
+  FROM ads_fact
+      LEFT JOIN ads_details
+        ON ads_fact.id = ads_details.id
+ GROUP BY date);
