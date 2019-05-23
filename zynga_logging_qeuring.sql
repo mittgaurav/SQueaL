@@ -3,27 +3,34 @@ get daily, weekly, and monthly
 active users using join with calendar.
 Avoid using correlated subqueries
 and temporary tables.
+We will put date filter in real ETL
+process to reduce number of rows we
+read form play_fact table.
+This table shall ideally be a stored
+table which is modified every day
+using the where statement.
+We should check with upstream system
+on far back they want us to go to put 
+in any corrections.
 */
 -- EXPLAIN QUERY PLAN
 -- EXPLAIN
-SELECT calendar.date date, 
-       count(DISTINCT dau_.user_id) dau, 
+SELECT dau_.date, 
+       count(DISTINCT dau_.user_id) dau,
        count(DISTINCT wau_.user_id) wau,
        count(DISTINCT mau_.user_id) mau
-  FROM calendar
-       INNER JOIN play_fact dau_ 
-         ON calendar.date = dau_.date
+  FROM play_fact dau_
        INNER JOIN play_fact wau_ 
-         ON wau_.date BETWEEN date(calendar.date, '-6 days') AND calendar.date
+         ON wau_.date BETWEEN date(dau_.date, '-6 days') AND dau_.date
        INNER JOIN play_fact mau_ 
-         ON mau_.date BETWEEN date(calendar.date, '-27 days') AND calendar.date
- GROUP BY calendar.date;
+         ON mau_.date BETWEEN date(dau_.date, '-27 days') AND dau_.date
+ -- WHERE dau_.date = date('2019-02-26')
+ GROUP BY dau_.date;
 
 /*get dau, wau, and mau
 along with retention over
 week/month.
 */ 
--- EXPLAIN QUERY PLAN
 WITH dau_table AS
 (SELECT date, count(DISTINCT user_id)*1.0 dau, sum(sessions)*1.0 sessions, sum(duration)*1.0 duration
   FROM play_fact
@@ -44,8 +51,8 @@ mau_table as
  GROUP BY 1)
 SELECT dau_table.date date, dau, wau, mau, 
       (dau/wau) weekly_engmt, (dau/mau) monthly_engmt,
-      dau_table.sessions/wau_table.sessions weekly_sess, dau_table.duration/wau_table.duration weekly_dur,
-      dau_table.sessions/mau_table.sessions monthly_sess, dau_table.duration/mau_table.duration monthly_dur
+      dau_table.sessions/wau_table.sessions weekly_sess, dau_table.sessions/mau_table.sessions monthly_sess,
+      dau_table.duration/wau_table.duration weekly_dur, dau_table.duration/mau_table.duration monthly_dur
   FROM dau_table
       INNER JOIN wau_table
         ON dau_table.date = wau_table.date
