@@ -44,15 +44,40 @@ INSERT INTO ads VALUES
                 (7, 10014, DATETIME('2019-02-25 18:00:00'), 'ignored'), 
                 (7, 10015, DATETIME('2019-02-26 18:00:00'), 'ignored'), 
                 (7, 10015, DATETIME('2019-02-26 18:01:00'), 'clicked'), 
+                (7, 10015, DATETIME('2019-02-26 18:01:00'), 'ignored'),
+                (1, 10001, DATETIME('2019-01-01 08:00:00'), 'clicked'), 
+                (3, 10002, DATETIME('2019-01-11 18:00:00'), 'clicked'), 
+                (6, 10004, DATETIME('2019-01-21 18:00:00'), 'closed'), 
+                (7, 10011, DATETIME('2019-02-11 03:00:00'), 'clicked'), 
+                (10, 10011, DATETIME('2019-02-11 18:00:00'), 'ignored'), 
+                (8, 10011, DATETIME('2019-02-15 08:00:00'), 'closed'), 
+                (9, 10012, DATETIME('2019-02-21 08:00:00'), 'clicked'), 
+                (10, 10013, DATETIME('2019-02-21 08:00:00'), 'ignored'), 
+                (3, 10011, DATETIME('2019-02-21 16:00:00'), 'ignored'), 
+                (5, 10010, DATETIME('2019-02-21 18:00:00'), 'ignored'), 
+                (6, 10010, DATETIME('2019-02-24 18:00:00'), 'clicked'), 
+                (10, 10014, DATETIME('2019-02-25 18:00:00'), 'clicked'), 
+                (7, 10015, DATETIME('2019-02-26 18:00:00'), 'ignored'), 
+                (9, 10015, DATETIME('2019-02-26 18:01:00'), 'clicked'), 
                 (7, 10015, DATETIME('2019-02-26 18:01:00'), 'ignored'), 
-                (6, 10016, DATETIME('2019-02-28 18:00:00'), 'ignored');
+                (10, 10011, DATETIME('2019-02-11 18:00:00'), 'ignored'), 
+                (8, 10011, DATETIME('2019-02-15 08:00:00'), 'closed'), 
+                (9, 10012, DATETIME('2019-02-21 08:00:00'), 'clicked'), 
+                (10, 10013, DATETIME('2019-02-21 08:00:00'), 'ignored'), 
+                (3, 10011, DATETIME('2019-02-21 16:00:00'), 'clicked'), 
+                (5, 10010, DATETIME('2019-02-21 18:00:00'), 'ignored'), 
+                (6, 10010, DATETIME('2019-02-24 18:00:00'), 'clicked'), 
+                (10, 10014, DATETIME('2019-02-25 18:00:00'), 'clicked'), 
+                (9, 10014, DATETIME('2019-02-25 18:00:00'), 'clicked'), 
+                (7, 10015, DATETIME('2019-02-26 18:00:00'), 'closed'), 
+                (9, 10015, DATETIME('2019-02-26 18:01:00'), 'clicked'), 
+                (7, 10015, DATETIME('2019-02-26 18:01:00'), 'ignored'), 
+                (6, 10016, DATETIME('2019-02-28 18:00:00'), 'clicked');
 
 DROP TABLE IF EXISTS ads_fact;
 CREATE TABLE ads_fact AS
-SELECT calendar.date, ads.id, user_id, platform_name, age_group, user_action
-  FROM calendar
-       LEFT JOIN ads 
-         ON calendar.date = date(ads.time) 
+SELECT date(ads.time) as date, ads.id, user_id, platform_name, age_group, user_action
+  FROM ads
        LEFT JOIN sessions 
          ON sessions.session_id = ads.session_id
        LEFT JOIN clients
@@ -68,10 +93,11 @@ along with click rate (clicked v rest).
 */
 -- EXPLAIN QUERY PLAN
 -- EXPLAIN
-SELECT date, earning as daily_earning, /*sum(earning) OVER (rows 6 preceding) week_earning,*/
+SELECT date, company, age_group, earning as daily_earning, 
+    /*sum(earning) OVER (rows 6 preceding) week_earning,*/
     clicks, ads_shown, clicks*1.0/ads_shown click_rate
   FROM
-(SELECT date, 
+(SELECT date, company, ads_details.age_group age_group,
     sum(CASE 
             WHEN user_action = 'clicked' THEN cost 
             ELSE NULL 
@@ -84,4 +110,4 @@ SELECT date, earning as daily_earning, /*sum(earning) OVER (rows 6 preceding) we
   FROM ads_fact
       LEFT JOIN ads_details
         ON ads_fact.id = ads_details.id
- GROUP BY date);
+ GROUP BY date, company, ads_details.age_group);
