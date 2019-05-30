@@ -43,11 +43,10 @@ INSERT INTO recommendations VALUES
                             (5, 3), 
                             (5, 8);
 
-SELECT *
+SELECT friends.id, recommendations.page
   FROM friends
        INNER JOIN recommendations 
          ON friends.friend = recommendations.id
-       LEFT JOIN recommendations r2 
-         ON friends.id = r2.id 
-           AND recommendations.page = r2.page
- WHERE r2.page IS NULL;
+       LEFT JOIN recommendations r2 -- get my own likes as Null
+         ON friends.id = r2.id AND recommendations.page = r2.page
+ WHERE r2.id IS NULL; -- remove my own likes
