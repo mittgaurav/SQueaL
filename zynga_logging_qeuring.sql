@@ -93,7 +93,7 @@ SELECT wau_table.date date,
   FROM wau_table
        -- OUTER JOIN wau_table wau_table_prev 
        LEFT JOIN wau_table wau_table_prev
-         ON wau_table.date = DATE(wau_table_prev.date, '+27 days') 
+         ON wau_table.date = DATE(wau_table_prev.date, '+6 days') 
          AND wau_table.user_id = wau_table_prev.user_id
        LEFT JOIN user_details
          ON wau_table.user_id = user_details.id
